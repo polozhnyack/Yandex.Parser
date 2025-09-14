@@ -27,9 +27,9 @@ jobs:
 
     - name: Build executable
       run: |
-        pyinstaller --onefile --windowed main.py --icon=icon.ico --collect-all selenium
+        pyinstaller --onefile --windowed main.py --icon=icon.ico --collect-all selenium --name YandexParser
 
-        
+
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
