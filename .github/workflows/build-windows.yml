@@ -1,0 +1,35 @@
+name: Build PyQt6 App for Windows
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyqt6 pyinstaller
+
+    - name: Build executable
+      run: |
+        pyinstaller --onefile --windowed main.py --icon=icon.ico
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: Yandex_parser
+        path: dist/main.exe
