@@ -29,7 +29,8 @@ jobs:
         pyinstaller --onefile --windowed main.py --icon=icon.ico
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Yandex_parser
         path: dist/main.exe
+
