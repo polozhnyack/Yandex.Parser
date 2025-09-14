@@ -11,7 +11,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/upload-artifact@v4
+      uses: actions/checkout@v3
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -32,5 +32,6 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: Yandex_parser
-        path: dist/main.exe
+        path: dist/*.exe
+
 
