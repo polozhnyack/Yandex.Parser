@@ -1,11 +1,15 @@
 from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QMessageBox, QCheckBox
 from PyQt6.QtGui import QIcon
-from parser import parser_data
 import csv
 from PyQt6.QtWidgets import QFileDialog
-from PyQt6.QtCore import QSettings, QTimer
-from PyQt6.QtCore import QPropertyAnimation, QEasingCurve
+from PyQt6.QtCore import QSettings, QTimer, QThread
+
 from PyQt6.QtWidgets import QHeaderView
+
+from worker import ParserWorker
+from console import ConsoleOutput
+
+import sys
 
 class ParserWindow(QWidget):
     def __init__(self):
@@ -90,6 +94,15 @@ class ParserWindow(QWidget):
             }
         """)
         button_layout.addWidget(self.export_button)
+
+
+        self.console = ConsoleOutput()
+        layout.addWidget(QLabel("Консоль:"))
+        layout.addWidget(self.console)
+
+        sys.stdout = self.console
+        sys.stderr = self.console
+
         layout.addLayout(button_layout)
         
         
@@ -139,7 +152,6 @@ class ParserWindow(QWidget):
         url = self.url_input.text()
         headless = self.headless_checkbox.isChecked()
 
-
         if not url:
             QMessageBox.warning(self, "Ошибка", "Заполните обязательные поля!")
             return
@@ -153,28 +165,40 @@ class ParserWindow(QWidget):
         else:
             limit = None
 
+        # создаём поток
+        self.thread: QThread = QThread()
+        self.worker = ParserWorker(url, limit, headless, number)
+        self.worker.moveToThread(self.thread)
 
-        parsed_data = parser_data(
-            target_url=url, 
-            limit=limit,
-            headless=headless,
-            )
+        self.thread.started.connect(self.worker.run)
+        self.worker.finished.connect(self.on_parsing_done)
+        self.worker.error.connect(self.on_parsing_error)
 
-        table_data = [[f"{number} {item['name']}", item['phone'] or '', item['geo']] for item in parsed_data]
-        
+        self.worker.finished.connect(self.thread.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+
+        self.thread.start()
+
+    def on_parsing_done(self, table_data):
         self.table.setRowCount(len(table_data))
         for row_idx, row_data in enumerate(table_data):
             for col_idx, item in enumerate(row_data):
                 self.table.setItem(row_idx, col_idx, QTableWidgetItem(item))
-        
+
         QMessageBox.information(self, "Парсинг завершен", "Таблица обновлена!")
+
+    def on_parsing_error(self, error_msg):
+        QMessageBox.critical(self, "Ошибка парсинга", error_msg)
+
+
 
 if __name__ == "__main__":
     app = QApplication([])
     window = ParserWindow()
 
     import os
-    icon_path = os.path.join(os.path.dirname(__file__), "icon.png")
+    icon_path = os.path.join(os.path.dirname(__file__), "icon.icns")
     window.setWindowIcon(QIcon(icon_path))  
 
     window.show()

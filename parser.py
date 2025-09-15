@@ -41,7 +41,6 @@ def get_whatsapp_link(driver, container, timeout=60):
             "a.WorkerControls-Control_chat button.Button2"
         )
 
-        print("HTML кнопки:", chat_btn.get_attribute("outerHTML"))
         if not chat_btn:
             print(f"Кнопка чат не найдена, скип")
             return None
@@ -53,7 +52,6 @@ def get_whatsapp_link(driver, container, timeout=60):
         try:
             element = WebDriverWait(driver, timeout).until(
                 EC.any_of(
-                    # EC.visibility_of_element_located((By.CSS_SELECTOR, "table.SocialLinkList")),
                     EC.visibility_of_element_located((By.CSS_SELECTOR, "div.Popup2.Popup2_visible")),
                     EC.presence_of_element_located((By.CSS_SELECTOR, "div.ya-chat-popup.ya-chat-popup_visible"))
                 )
@@ -71,10 +69,6 @@ def get_whatsapp_link(driver, container, timeout=60):
                 href = wa_link.get_attribute("href")
                 print(f"✅ WhatsApp ссылка: {href}")
 
-                # Скрываем таблицу через JS
-                driver.execute_script("arguments[0].style.display='none';", table)
-                print("🔒 Таблица скрыта вручную через JS")
-
                 # Повторный клик на кнопку "Чат", чтобы закрыть окно полностью
                 driver.execute_script("arguments[0].click();", chat_btn)
                 print("🔒 Чат закрыт повторным кликом на кнопку")
@@ -84,8 +78,6 @@ def get_whatsapp_link(driver, container, timeout=60):
                 print("❌ Ссылки WhatsApp нет в SocialLinkList")
                 return None
             
-
-        
         chat_popups = driver.find_elements(By.CSS_SELECTOR, "div.ya-chat-popup.ya-chat-popup_visible")
         if chat_popups:
             driver.execute_script("arguments[0].style.display='none';", chat_popups[0])
@@ -123,25 +115,23 @@ def parser_data(target_url: str, limit: int=None, headless=False):
         info = []
 
         while url:
-            html = fetch_page_source(driver, url, wait=5)
+            print(f"Делаем запрос на: {url}")
+            fetch_page_source(driver, url, wait=5)
+            print(f"Запрос выполнен, страница открыта.")
             
             WebDriverWait(driver, 10).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.WorkersListBlendered-WorkerCard"))
             )
             
-            # containers_selenium = driver.find_elements(By.CSS_SELECTOR, "div.WorkersListBlendered-WorkerCard")
             containers_selenium = driver.find_elements(
                 By.CSS_SELECTOR, "div.WorkersListBlendered-WorkerCard.Gap.Gap_bottom_l"
             )
 
-            
             for container in containers_selenium:
                 try:
                     if "WebBanner" in container.get_attribute("class"):
-                        print(f"⚠️ В контейнере реклама, пропускаем. HTML: {container.get_attribute('outerHTML')[:200]}...")
+                        print(f"⚠️ В контейнере реклама, пропускаем...")
                         continue
-                    # name_element = container.find_element(By.CSS_SELECTOR, "a.WorkerCard-Title")
-                    # name_element = container.find_element(By.CSS_SELECTOR, "a.WorkerCard-Title, a.WorkerCard-Title.WorkerCard-Title_withLabel")
 
                     try:
                         name_element = container.find_element(By.CSS_SELECTOR, "a.WorkerCard-Title")
@@ -154,17 +144,20 @@ def parser_data(target_url: str, limit: int=None, headless=False):
                     
                     name = name_element.text.strip()
                     geo = geo_element.text.strip()
+
+                    print(f"Получаем телефон пользователя: {name}")
+
                     phone_html = get_whatsapp_link(driver, container)
                     phone = parse_whatsapp_link(phone_html) if phone_html else None
-
-                    print(phone)
                     
                     if name and phone:
-                        info.append({
+                        entry = {
                             "name": name,
                             "geo": geo,
                             "phone": phone
-                        })
+                        }
+                        info.append(entry)
+                        print(entry)
                 
                     if limit and len(info) >= limit:
                         return info
