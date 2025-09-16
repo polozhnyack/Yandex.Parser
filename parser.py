@@ -8,18 +8,22 @@ from selenium.webdriver.support import expected_conditions as EC
 
 import time
 from urllib.parse import urljoin, urlparse
-
 import re
+import tempfile
+import time
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-import time
 
 def create_driver(headless: bool = False) -> webdriver.Chrome:
     options = Options()
     options.add_argument("--disable-blink-features=AutomationControlled")
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option("useAutomationExtension", False)
+
+    user_data_dir = tempfile.mkdtemp()
+    options.add_argument(f"--user-data-dir={user_data_dir}")
+
     options.add_argument("--start-maximized")
     if headless:
         options.add_argument("--headless=new")
