@@ -5,12 +5,14 @@ from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
 
 import time
 from urllib.parse import urljoin, urlparse
 import re
 import tempfile
 import time
+import random
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -23,13 +25,14 @@ def create_driver(headless: bool = False) -> webdriver.Chrome:
 
     user_data_dir = tempfile.mkdtemp()
     options.add_argument(f"--user-data-dir={user_data_dir}")
+    options.add_argument(f"--remote-debugging-port={random.randint(9000, 9999)}")
     
     options.add_argument("--start-maximized")
     if headless:
         options.add_argument("--headless=new")
         options.add_argument("--window-size=1920,1080")
 
-    driver = webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     return driver
 
 def fetch_page_source(driver: webdriver.Chrome, url: str, wait: float = 5.0) -> str:

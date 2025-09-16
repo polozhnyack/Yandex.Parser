@@ -18,6 +18,7 @@ PyQt6==6.9.1
 PyQt6-Qt6==6.9.2
 PyQt6_sip==13.10.2
 PySocks==1.7.1
+python-dotenv==1.1.1
 requests==2.32.5
 selenium==4.35.0
 setuptools==80.9.0
@@ -28,6 +29,7 @@ trio==0.30.0
 trio-websocket==0.12.2
 typing_extensions==4.14.1
 urllib3==2.5.0
+webdriver-manager==4.0.2
 websocket-client==1.8.0
 wsproto==1.2.0
 yarl==1.20.1

@@ -1,4 +1,4 @@
-name: Build PyQt6 App for Windows
+name: YandexParser
 
 on:
   push:
@@ -35,5 +35,3 @@ jobs:
       with:
         name: Yandex_parser
         path: dist/*.exe
-
-
