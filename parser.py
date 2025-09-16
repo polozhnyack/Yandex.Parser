@@ -23,7 +23,7 @@ def create_driver(headless: bool = False) -> webdriver.Chrome:
 
     user_data_dir = tempfile.mkdtemp()
     options.add_argument(f"--user-data-dir={user_data_dir}")
-
+    
     options.add_argument("--start-maximized")
     if headless:
         options.add_argument("--headless=new")
