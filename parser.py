@@ -112,9 +112,15 @@ def get_whatsapp_link(driver: webdriver.Chrome, container, timeout=60):
                     By.CSS_SELECTOR,
                     "div.Popup2.Popup2_visible.WorkerControls-MessengersPopup"
                 )
-                if popups:
-                    driver.execute_script("arguments[0].remove();", popups[0])
-                    print("🗑️ Popup2 удалён из DOM")
+                for popup in popups:
+                    driver.execute_script("arguments[0].remove();", popup)
+                print(f"🗑️ Удалено {len(popups)} Popup2 из DOM")
+
+                WebDriverWait(driver, 5).until_not(
+                    EC.presence_of_all_elements_located(
+                        (By.CSS_SELECTOR, "div.Popup2.Popup2_visible.WorkerControls-MessengersPopup")
+                    )
+                )
                 return href
 
             except Exception:
