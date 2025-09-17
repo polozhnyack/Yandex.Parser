@@ -96,8 +96,15 @@ def get_whatsapp_link(driver: webdriver.Chrome, container, timeout=60):
                     EC.presence_of_element_located((By.CSS_SELECTOR, "div.ya-chat-popup.ya-chat-popup_visible"))
                 )
             )
-        except Exception:
+        except Exception as e:
             print("❌ Ни таблицы, ни окна чата не появилось")
+            
+            try:
+                html = driver.find_element(By.TAG_NAME, "body").get_attribute("outerHTML")
+                print(f"Причина: {e}\nТекущий HTML body:\n{html[:2000]}...")  # Ограничиваем вывод до первых 2000 символов
+            except Exception as inner_e:
+                print(f"Не удалось получить HTML для дебага: {inner_e}")
+            
             return None
 
         href = None
