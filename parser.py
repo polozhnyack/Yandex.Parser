@@ -5,6 +5,7 @@ from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from webdriver_manager.chrome import ChromeDriverManager
 
 import time
@@ -41,20 +42,51 @@ def fetch_page_source(driver: webdriver.Chrome, url: str, wait: float = 5.0) -> 
     return driver.page_source
 
 
-def get_whatsapp_link(driver, container, timeout=60):
+def get_whatsapp_link(driver: webdriver.Chrome, container, timeout=60):
     try:
-        chat_btn = container.find_element(
-            By.CSS_SELECTOR,
-            "a.WorkerControls-Control_chat button.Button2"
-        )
-
-        if not chat_btn:
-            print(f"Кнопка чат не найдена, скип")
+        try:
+            chat_btn = container.find_element(
+                By.CSS_SELECTOR,
+                "a.WorkerControls-Control_chat button.Button2"
+            )
+        except Exception:
+            print("❌ Кнопка Чат не найдена")
             return None
+        
+        try:
+            adv_div = container.find_element(
+                By.CSS_SELECTOR,
+                "div.Text.Text_fontSize_s.Text_lineHeight_s.Text_color_greyDark.TextBlock.WorkerCard-AdvWarning"
+            )
+        except NoSuchElementException:
+            adv_div = None
+
+        
+        main_window = driver.current_window_handle
+        before_click = set(driver.window_handles)
 
         driver.execute_script("arguments[0].scrollIntoView(true);", chat_btn)
         driver.execute_script("arguments[0].click();", chat_btn)
         print("✅ Кнопка 'Чат' нажата")
+
+        if adv_div:
+            try:
+                WebDriverWait(driver, 5).until(
+                    lambda d: len(d.window_handles) > len(before_click)
+                )
+            except TimeoutException:
+                print("⚠️ Новая вкладка не открылась")
+                new_windows = []
+            else:
+                after_click = set(driver.window_handles)
+                new_windows = after_click - before_click
+
+            for w in new_windows:
+                driver.switch_to.window(w)
+                driver.close()
+                print(f"🗑️ Закрыта новая вкладка {w}")
+
+            driver.switch_to.window(main_window)
 
         try:
             element = WebDriverWait(driver, timeout).until(
@@ -76,9 +108,13 @@ def get_whatsapp_link(driver, container, timeout=60):
                 href = wa_link.get_attribute("href")
                 print(f"✅ WhatsApp ссылка: {href}")
 
-                # Повторный клик на кнопку "Чат", чтобы закрыть окно полностью
-                driver.execute_script("arguments[0].click();", chat_btn)
-                print("🔒 Чат закрыт повторным кликом на кнопку")
+                popups = driver.find_elements(
+                    By.CSS_SELECTOR,
+                    "div.Popup2.Popup2_visible.WorkerControls-MessengersPopup"
+                )
+                if popups:
+                    driver.execute_script("arguments[0].remove();", popups[0])
+                    print("🗑️ Popup2 удалён из DOM")
                 return href
 
             except Exception:
@@ -144,10 +180,14 @@ def parser_data(target_url: str, limit: int=None, headless=False):
                         name_element = container.find_element(By.CSS_SELECTOR, "a.WorkerCard-Title")
                     except Exception:
                         container_html = container.get_attribute("outerHTML")[:500]
-                        print(f"⚠️ В контейнере нет имени, скипаем. HTML: {container_html}...")
+                        print(f"⚠️ В контейнере нет имени, скипаем. HTML: {container_html}")
                         continue
+                    try:
+                        geo_element = container.find_element(By.CSS_SELECTOR, "div.WorkerGeo-Address")
+                    except Exception:
+                        container_html = container.get_attribute("outerHTML")[:500]
+                        print(f"⚠️ В контейнере нет гео, скипаем. HTML: {container_html}")
 
-                    geo_element = container.find_element(By.CSS_SELECTOR, "div.WorkerGeo-Address")
                     
                     name = name_element.text.strip()
                     geo = geo_element.text.strip()

@@ -16,7 +16,6 @@ class ParserWindow(QWidget):
         super().__init__()
         self.setWindowTitle("Парсер Яндекс.Услуг")
 
-        # создаём QSettings
         self.settings = QSettings("Rogovoy", "YandexParser")
 
         self.init_ui()
@@ -63,6 +62,12 @@ class ParserWindow(QWidget):
         """)
         button_layout.addWidget(self.run_button)
         layout.addLayout(button_layout)
+
+        hlayout = QHBoxLayout()
+        hlayout.addStretch()
+        self.counter_label = QLabel("Записей: 0")
+        hlayout.addWidget(self.counter_label)
+        layout.addLayout(hlayout)
         
         # Таблица
         self.table = QTableWidget()
@@ -70,7 +75,9 @@ class ParserWindow(QWidget):
         self.table.setHorizontalHeaderLabels(["Имя", "Телефон", "Гео"])
         header = self.table.horizontalHeader()
         self.table.verticalHeader().setVisible(False)
-        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.table.setEditTriggers(
+            QTableWidget.EditTrigger.DoubleClicked | QTableWidget.EditTrigger.SelectedClicked
+        )
         self.table.setAlternatingRowColors(True)
         self.table.resizeRowsToContents()
         for i in range(self.table.columnCount()):
@@ -186,6 +193,7 @@ class ParserWindow(QWidget):
             for col_idx, item in enumerate(row_data):
                 self.table.setItem(row_idx, col_idx, QTableWidgetItem(item))
 
+        self.counter_label.setText(f"Записей: {len(table_data)}")
         QMessageBox.information(self, "Парсинг завершен", "Таблица обновлена!")
 
     def on_parsing_error(self, error_msg):
@@ -196,6 +204,9 @@ class ParserWindow(QWidget):
 if __name__ == "__main__":
     app = QApplication([])
     window = ParserWindow()
+    from errors import global_exception_hook
+
+    sys.excepthook = global_exception_hook
 
     import os
     icon_path = os.path.join(os.path.dirname(__file__), "icon.icns")
