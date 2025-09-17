@@ -45,6 +45,15 @@ def fetch_page_source(driver: webdriver.Chrome, url: str, wait: float = 5.0) -> 
 
 def get_whatsapp_link(driver: webdriver.Chrome, container, timeout=60):
     try:
+        old_popups = driver.find_elements(
+            By.CSS_SELECTOR,
+            "div.Popup2.Popup2_visible.WorkerControls-MessengersPopup"
+        )
+        if old_popups:
+            for popup in old_popups:
+                driver.execute_script("arguments[0].remove();", popup)
+            print(f"🗑️ Удалено {len(old_popups)} старых Popup2 из DOM перед кликом")
+
         try:
             chat_btn = container.find_element(
                 By.CSS_SELECTOR,
@@ -62,11 +71,11 @@ def get_whatsapp_link(driver: webdriver.Chrome, container, timeout=60):
         except NoSuchElementException:
             adv_div = None
 
-        
         main_window = driver.current_window_handle
         before_click = set(driver.window_handles)
 
-        driver.execute_script("arguments[0].scrollIntoView(true);", chat_btn)
+
+        # driver.execute_script("arguments[0].scrollIntoView(true);", chat_btn)
         driver.execute_script("arguments[0].click();", chat_btn)
         print("✅ Кнопка 'Чат' нажата")
 
@@ -122,11 +131,11 @@ def get_whatsapp_link(driver: webdriver.Chrome, container, timeout=60):
 
                 href = wa_link.get_attribute("href")
                 print(f"✅ WhatsApp ссылка: {href}")
-
                 popups = driver.find_elements(
                     By.CSS_SELECTOR,
                     "div.Popup2.Popup2_visible.WorkerControls-MessengersPopup"
                 )
+
                 for popup in popups:
                     driver.execute_script("arguments[0].remove();", popup)
                 print(f"🗑️ Удалено {len(popups)} Popup2 из DOM")
@@ -178,6 +187,9 @@ def parser_data(target_url: str, limit: int=None, headless=False):
 
             for container in containers_selenium:
                 try:
+                    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", container)
+                    time.sleep(0.5)
+
                     if "WebBanner" in container.get_attribute("class"):
                         print(f"⚠️ В контейнере реклама, пропускаем...")
                         continue
