@@ -101,15 +101,6 @@ class ParserWindow(QWidget):
             }
         """)
         button_layout.addWidget(self.export_button)
-
-
-        self.console = ConsoleOutput()
-        layout.addWidget(QLabel("Консоль:"))
-        layout.addWidget(self.console)
-
-        sys.stdout = self.console
-        sys.stderr = self.console
-
         layout.addLayout(button_layout)
         
         

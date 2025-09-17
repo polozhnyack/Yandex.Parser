@@ -9,14 +9,15 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from webdriver_manager.chrome import ChromeDriverManager
 
 import time
-from urllib.parse import urljoin, urlparse
-import re
 import tempfile
 import time
 import random
+from urllib.parse import urljoin
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+
+from utils import parse_whatsapp_link
 
 def create_driver(headless: bool = False) -> webdriver.Chrome:
     options = Options()
@@ -103,8 +104,15 @@ def get_whatsapp_link(driver: webdriver.Chrome, container, timeout=60):
 
         if "Popup2_visible" in element.get_attribute("class"):
             try:
-                table = element.find_element(By.CSS_SELECTOR, "table.SocialLinkList")
-                wa_link = table.find_element(By.CSS_SELECTOR, "a.SocialLinkList-whatsapp")
+                # Ждём появления таблицы
+                table = WebDriverWait(element, 5).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "table.SocialLinkList"))
+                )
+
+                wa_link = WebDriverWait(table, 5).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "a.SocialLinkList-whatsapp"))
+                )
+
                 href = wa_link.get_attribute("href")
                 print(f"✅ WhatsApp ссылка: {href}")
 
@@ -123,10 +131,12 @@ def get_whatsapp_link(driver: webdriver.Chrome, container, timeout=60):
                 )
                 return href
 
-            except Exception:
-                print("❌ Ссылки WhatsApp нет в SocialLinkList")
+            except Exception as e:
+                html_snippet = element.get_attribute("outerHTML")
+                print(f"❌ Ссылки WhatsApp нет в SocialLinkList: {e} HTML:\n{html_snippet}")
                 return None
             
+
         chat_popups = driver.find_elements(By.CSS_SELECTOR, "div.ya-chat-popup.ya-chat-popup_visible")
         if chat_popups:
             driver.execute_script("arguments[0].style.display='none';", chat_popups[0])
@@ -139,23 +149,6 @@ def get_whatsapp_link(driver: webdriver.Chrome, container, timeout=60):
         return None
 
 
-def parse_whatsapp_link(link: str) -> str | None:
-    if not link:
-        return None
-    try:
-        path = urlparse(link).path  # -> "/79191376017"
-        phone_digits = re.sub(r"\D", "", path)  # -> "79191376017"
-
-        if not phone_digits:
-            return None
-
-        if phone_digits.startswith("8"):
-            phone_digits = "7" + phone_digits[1:]
-
-        return phone_digits
-    except Exception as e:
-        print(f"❌ Ошибка парсинга WhatsApp ссылки: {e}")
-        return None
 
 def parser_data(target_url: str, limit: int=None, headless=False):
     driver = create_driver(headless=headless)
