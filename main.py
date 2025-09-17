@@ -2,12 +2,12 @@ from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButto
 from PyQt6.QtGui import QIcon
 import csv
 from PyQt6.QtWidgets import QFileDialog
-from PyQt6.QtCore import QSettings, QTimer, QThread
+from PyQt6.QtCore import QSettings, QThread
 
 from PyQt6.QtWidgets import QHeaderView
 
 from worker import ParserWorker
-from console import ConsoleOutput
+from utils import copy_to_clipboard
 
 import sys
 
@@ -64,9 +64,16 @@ class ParserWindow(QWidget):
         layout.addLayout(button_layout)
 
         hlayout = QHBoxLayout()
+
+        self.copy_btn = QPushButton("Скопировать всё")
+        self.copy_btn.clicked.connect(lambda: copy_to_clipboard(self.table))
+        hlayout.addWidget(self.copy_btn)
+
         hlayout.addStretch()
+
         self.counter_label = QLabel("Записей: 0")
         hlayout.addWidget(self.counter_label)
+
         layout.addLayout(hlayout)
         
         # Таблица

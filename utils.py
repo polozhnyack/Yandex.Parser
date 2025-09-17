@@ -1,8 +1,28 @@
 import re
 from urllib.parse import urljoin, urlparse
+from PyQt6.QtWidgets import QApplication, QTableWidget, QMessageBox
 
 
 
+def copy_to_clipboard(table: QTableWidget):
+    if table.rowCount() == 0:
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Icon.Warning)
+        msg.setWindowTitle("Внимание")
+        msg.setText("Таблица пуста!")
+        msg.exec()
+        return
+
+    rows_data = []
+    for row in range(table.rowCount()):
+        name_item = table.item(row, 0)
+        phone_item = table.item(row, 1)
+
+        name = name_item.text() if name_item else ""
+        phone = phone_item.text() if phone_item else ""
+
+        rows_data.append(f"{name}\t{phone}")
+    QApplication.clipboard().setText("\n".join(rows_data))
 
 
 def parse_whatsapp_link(link: str) -> str | None:
