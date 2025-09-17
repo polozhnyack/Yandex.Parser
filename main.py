@@ -191,7 +191,7 @@ class ParserWindow(QWidget):
         self.table.setRowCount(len(table_data))
         for row_idx, row_data in enumerate(table_data):
             for col_idx, item in enumerate(row_data):
-                self.table.setItem(row_idx, col_idx, QTableWidgetItem(item))
+                self.table.setItem(row_idx, col_idx, QTableWidgetItem(str(item) if item is not None else ""))
 
         self.counter_label.setText(f"Записей: {len(table_data)}")
         QMessageBox.information(self, "Парсинг завершен", "Таблица обновлена!")
@@ -209,7 +209,7 @@ if __name__ == "__main__":
     sys.excepthook = global_exception_hook
 
     import os
-    icon_path = os.path.join(os.path.dirname(__file__), "icon.icns")
+    icon_path = os.path.join(os.path.dirname(__file__), "icon.ico")
     window.setWindowIcon(QIcon(icon_path))  
 
     window.show()
