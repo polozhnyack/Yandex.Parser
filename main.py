@@ -311,6 +311,9 @@ class ParserWindow(QWidget):
         self.counter_label.setText(f"Записей: {len(table_data)}")
         QMessageBox.information(self, "Парсинг завершен", "Таблица обновлена!")
 
+        # Автоматическое сохранение
+        self.export_to_csv()
+
     def on_parsing_error(self, error_msg):
         QMessageBox.critical(self, "Ошибка парсинга", error_msg)
 
