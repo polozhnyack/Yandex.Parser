@@ -167,6 +167,7 @@ class ParserWindow(QWidget):
         
         # Обработчик выбора папки
         self.folder_button.clicked.connect(self.select_storage_folder)
+        self.copy_btn.clicked.connect(lambda: copy_to_clipboard(self.table))
 
 
     def on_run_click(self):
