@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButto
 from PyQt6.QtGui import QIcon
 import csv
 from PyQt6.QtWidgets import QFileDialog
-from PyQt6.QtCore import QSettings, QThread
+from PyQt6.QtCore import QSettings, QThread, QTimer
 
 from PyQt6.QtWidgets import QHeaderView
 
@@ -167,7 +167,8 @@ class ParserWindow(QWidget):
         
         # Обработчик выбора папки
         self.folder_button.clicked.connect(self.select_storage_folder)
-        self.copy_btn.clicked.connect(lambda: copy_to_clipboard(self.table))
+        # self.copy_btn.clicked.connect(lambda: copy_to_clipboard(self.table))
+        self.copy_btn.clicked.connect(self.copy_and_feedback)
 
 
     def on_run_click(self):
@@ -360,6 +361,49 @@ class ParserWindow(QWidget):
 
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Ошибка чтения файла:\n{str(e)}")
+
+    def copy_and_feedback(self):
+        copy_to_clipboard(self.table)
+        
+        original_text = self.copy_btn.text()
+        original_width = self.copy_btn.width()
+        
+        self.copy_btn.setText("Скопировано!")
+        self.copy_btn.setMinimumWidth(original_width)
+        self.copy_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #28a745;  /* ярко-зелёный */
+                color: white;
+                font-weight: bold;
+                border-radius: 4px;
+                font-size: 12px;
+                padding: 8px 16px;
+            }
+            QPushButton:hover {
+                background-color: #218838;  /* чуть темнее при наведении */
+            }
+        """)
+        
+        def restore():
+            self.copy_btn.setText(original_text)
+            self.copy_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #6c757d;
+                    color: white;
+                    font-weight: bold;
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                }
+                QPushButton:hover {
+                    background-color: #5a6268;
+                }
+            """)
+            self.copy_btn.setMinimumWidth(0)
+        
+        QTimer.singleShot(1000, restore)
+
+
 
 
 
