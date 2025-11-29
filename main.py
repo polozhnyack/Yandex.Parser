@@ -251,14 +251,14 @@ class ParserWindow(QWidget):
 
             new_rows.append((name, phone))
 
-        merged = merge_csv_records(old_rows, new_rows)
+        # merged = merge_csv_records(old_rows, new_rows)
+        merged_rows = merge_csv_records(old_rows, new_rows)
 
         try:
             with open(file_path, "w", newline="", encoding="utf-8") as f:
                 writer = csv.writer(f, delimiter=";")
                 writer.writerow(["Имя", "Телефон"])
-
-                for phone, name in merged.items():
+                for name, phone in merged_rows:
                     writer.writerow([name, phone])
 
             QMessageBox.information(self, "Успех", f"Таблица сохранена в:\n{file_path}")
