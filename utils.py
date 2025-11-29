@@ -52,11 +52,23 @@ def parse_whatsapp_link(link: str) -> str | None:
         return None
     
 
-def merge_csv_records(old_rows, new_rows):
-    merged = {}
+# def merge_csv_records(old_rows, new_rows):
+#     merged = {}
 
-    for name, phone in old_rows:
-        merged[phone] = name
+#     for name, phone in old_rows:
+#         merged[phone] = name
+
+#     for name, phone in new_rows:
+#         if phone in merged:
+#             merged[phone] = max(merged[phone], name, key=len)
+#         else:
+#             merged[phone] = name
+
+#     return merged
+
+
+def merge_csv_records(old_rows, new_rows):
+    merged = {phone: name for name, phone in old_rows}
 
     for name, phone in new_rows:
         if phone in merged:
@@ -64,4 +76,4 @@ def merge_csv_records(old_rows, new_rows):
         else:
             merged[phone] = name
 
-    return merged
+    return [(name, phone) for phone, name in merged.items()]
