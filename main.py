@@ -251,7 +251,6 @@ class ParserWindow(QWidget):
 
             new_rows.append((name, phone))
 
-        # merged = merge_csv_records(old_rows, new_rows)
         merged_rows = merge_csv_records(old_rows, new_rows)
 
         try:
@@ -311,10 +310,9 @@ class ParserWindow(QWidget):
                 self.table.setItem(row_idx, col_idx, QTableWidgetItem(str(item) if item is not None else ""))
 
         self.counter_label.setText(f"Записей: {len(table_data)}")
-        QMessageBox.information(self, "Парсинг завершен", "Таблица обновлена!")
-
-        # Автоматическое сохранение
         self.export_to_csv()
+        
+        QMessageBox.information(self, "Парсинг завершен", "Таблица обновлена!")
 
     def on_parsing_error(self, error_msg):
         QMessageBox.critical(self, "Ошибка парсинга", error_msg)
@@ -402,10 +400,6 @@ class ParserWindow(QWidget):
             self.copy_btn.setMinimumWidth(0)
         
         QTimer.singleShot(1000, restore)
-
-
-
-
 
 
 if __name__ == "__main__":

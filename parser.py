@@ -14,7 +14,7 @@ import time
 import random
 from urllib.parse import urljoin
 
-from selenium import webdriver
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.chrome.options import Options
 
 from utils import parse_whatsapp_link
@@ -130,21 +130,22 @@ def get_whatsapp_link(driver: webdriver.Chrome, container, timeout=60):
                 )
 
                 href = wa_link.get_attribute("href")
+
                 print(f"✅ WhatsApp ссылка: {href}")
-                popups = driver.find_elements(
-                    By.CSS_SELECTOR,
-                    "div.Popup2.Popup2_visible.WorkerControls-MessengersPopup"
-                )
+                # popups = driver.find_elements(
+                #     By.CSS_SELECTOR,
+                #     "div.Popup2.Popup2_visible.WorkerControls-MessengersPopup"
+                # )
 
-                for popup in popups:
-                    driver.execute_script("arguments[0].remove();", popup)
-                print(f"🗑️ Удалено {len(popups)} Popup2 из DOM")
+                # for popup in popups:
+                #     driver.execute_script("arguments[0].remove();", popup)
+                # print(f"🗑️ Удалено {len(popups)} Popup2 из DOM")
 
-                WebDriverWait(driver, 5).until_not(
-                    EC.presence_of_all_elements_located(
-                        (By.CSS_SELECTOR, "div.Popup2.Popup2_visible.WorkerControls-MessengersPopup")
-                    )
-                )
+                # WebDriverWait(driver, 5).until_not(
+                #     EC.presence_of_all_elements_located(
+                #         (By.CSS_SELECTOR, "div.Popup2.Popup2_visible.WorkerControls-MessengersPopup")
+                #     )
+                # )
                 return href
 
             except Exception as e:
@@ -152,18 +153,112 @@ def get_whatsapp_link(driver: webdriver.Chrome, container, timeout=60):
                 print(f"❌ Ссылки WhatsApp нет в SocialLinkList: {e} HTML:\n{html_snippet}")
                 return None
             
-
-        chat_popups = driver.find_elements(By.CSS_SELECTOR, "div.ya-chat-popup.ya-chat-popup_visible")
-        if chat_popups:
-            driver.execute_script("arguments[0].style.display='none';", chat_popups[0])
-            print("🔒 Чат скрыт вручную через JS")
-        else:
-            print("⚠️ Чат с классом ya-chat-popup_visible не найден, ничего не скрываем")
+        # chat_popups = driver.find_elements(By.CSS_SELECTOR, "div.ya-chat-popup.ya-chat-popup_visible")
+        # if chat_popups:
+        #     driver.execute_script("arguments[0].style.display='none';", chat_popups[0])
+        #     print("🔒 Чат скрыт вручную через JS")
+        # else:
+        #     print("⚠️ Чат с классом ya-chat-popup_visible не найден, ничего не скрываем")
 
     except Exception as e:
         print(f"❌ Ошибка при поиске WhatsApp: {e}")
         return None
+    
 
+def get_full_name(driver: webdriver.Chrome, container: WebElement, timeout=60):
+
+    try:
+        old_iframe = driver.find_elements(By.CSS_SELECTOR, "iframe.ya-chat-base__iframe")
+        for iframe in old_iframe:
+            driver.execute_script("arguments[0].remove();", iframe)
+        if old_iframe:
+            print(f"Удалено {len(old_iframe)} старых iframe")
+    except Exception:
+        pass
+
+    element = WebDriverWait(driver, timeout).until(
+            EC.any_of(
+                EC.visibility_of_element_located((By.CSS_SELECTOR, "div.Popup2.Popup2_visible")),
+                EC.presence_of_element_located((By.CSS_SELECTOR, "div.ya-chat-popup.ya-chat-popup_visible"))
+            )
+        )
+
+    if "Popup2_visible" in element.get_attribute("class"):
+        print(f"Появилась таблица в get_full_name")
+        try:
+            # Ждём появления таблицы
+            table = WebDriverWait(element, 5).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "table.SocialLinkList"))
+            )
+
+            # Ищем кнопку "Я.Мессенджер"
+            ya_messenger_btn = table.find_elements(
+                By.XPATH,
+                ".//div[contains(@class, 'SocialLinkList-Link')]//div[contains(text(), 'Я.Мессенджер')]"
+            )
+
+            if not ya_messenger_btn:
+                print("Не найден чат в окне")
+                return None
+
+            clickable = ya_messenger_btn[0].find_element(By.XPATH, "./ancestor::div[contains(@class, 'SocialLinkList-Link')]")
+            clickable.click()
+
+            print("Нажата кнопка Я.Мессенджера")
+            try:
+                iframe = WebDriverWait(driver, 15).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "iframe.ya-chat-base__iframe"))
+                )
+
+                driver.switch_to.frame(iframe)
+                print("Переключились в iframe чата")
+
+                name_elem = WebDriverWait(driver, 60).until(
+                    EC.presence_of_element_located(
+                        (By.XPATH, "//span[contains(@id, '_title')]")
+                    )
+                )
+
+                print("HTML элемента имени:")
+                print(name_elem.get_attribute("outerHTML"))
+
+                raw_name = name_elem.text.strip()
+                formatted_name = " ".join(word.capitalize() for word in raw_name.split())
+                print(f"Получено имя из чата: {formatted_name}")
+
+                driver.switch_to.default_content()
+
+                try:
+                    driver.execute_script("arguments[0].remove();", iframe)
+                    print("Iframe удалён после парса")
+                except Exception:
+                    pass
+                return formatted_name
+
+            except Exception:
+                return None
+        except Exception as e:
+            print(f"❌ Ошибка при поиске WhatsApp: {e}")
+            return None
+
+
+
+def close_popup(driver: WebElement):
+
+    popups = driver.find_elements(
+        By.CSS_SELECTOR,
+        "div.Popup2.Popup2_visible.WorkerControls-MessengersPopup"
+    )
+
+    for popup in popups:
+        driver.execute_script("arguments[0].remove();", popup)
+    print(f"🗑️ Удалено {len(popups)} Popup2 из DOM")
+
+    WebDriverWait(driver, 5).until_not(
+        EC.presence_of_all_elements_located(
+            (By.CSS_SELECTOR, "div.Popup2.Popup2_visible.WorkerControls-MessengersPopup")
+        )
+    )
 
 
 def parser_data(target_url: str, limit: int=None, headless=False):
@@ -181,7 +276,7 @@ def parser_data(target_url: str, limit: int=None, headless=False):
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.WorkersListBlendered-WorkerCard"))
             )
             
-            containers_selenium = driver.find_elements(
+            containers_selenium: list[WebElement] = driver.find_elements(
                 By.CSS_SELECTOR, "div.WorkersListBlendered-WorkerCard.Gap.Gap_bottom_l"
             )
 
@@ -207,14 +302,25 @@ def parser_data(target_url: str, limit: int=None, headless=False):
                         print(f"⚠️ В контейнере нет гео, скипаем. HTML: {container_html}")
 
                     
-                    name = name_element.text.strip()
                     geo = geo_element.text.strip()
 
-                    print(f"Получаем телефон пользователя: {name}")
 
                     phone_html = get_whatsapp_link(driver, container)
+                    if not phone_html:
+                        print(f"Не найден phone_html")
+                        continue
                     phone = parse_whatsapp_link(phone_html) if phone_html else None
-                    
+
+                    name_card = name_element.text.strip()
+
+                    name = get_full_name(driver, container)
+                    if not name:
+                        name = name_card
+
+                    print(f"Получаем имя пользователя из чата: {name} имя пользователя из карточки {name_card}")
+
+                    close_popup(driver)
+
                     if name and phone:
                         entry = {
                             "name": name,

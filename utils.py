@@ -50,21 +50,6 @@ def parse_whatsapp_link(link: str) -> str | None:
     except Exception as e:
         print(f"❌ Ошибка парсинга WhatsApp ссылки: {e}")
         return None
-    
-
-# def merge_csv_records(old_rows, new_rows):
-#     merged = {}
-
-#     for name, phone in old_rows:
-#         merged[phone] = name
-
-#     for name, phone in new_rows:
-#         if phone in merged:
-#             merged[phone] = max(merged[phone], name, key=len)
-#         else:
-#             merged[phone] = name
-
-#     return merged
 
 
 def merge_csv_records(old_rows, new_rows):
